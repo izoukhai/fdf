@@ -5,45 +5,63 @@
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: izoukhai <marvin@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
-/*   Created: 2018/11/26 22:23:52 by izoukhai     #+#   ##    ##    #+#       */
-/*   Updated: 2018/11/26 22:23:53 by izoukhai    ###    #+. /#+    ###.fr     */
+/*   Created: 2018/12/08 03:16:36 by izoukhai     #+#   ##    ##    #+#       */
+/*   Updated: 2018/12/08 03:39:15 by izoukhai    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #include "fdf.h"
 
-static void print_map(t_map *map)
+int					check_error(int ac, char *file)
 {
-	int i = -1, j = -1;
-	while (++i < map->size.y)
+	int				fd;
+	char			buf[1];
+
+	if (ac != 2)
 	{
-		j = -1;
-		while (++j < map->size.x)
-		{
-			ft_putnbr(map->tab[i][j]);
-			if (map->tab[i][j] == 10)
-				ft_putchar(' ');
-			else
-				ft_putstr("  ");
-		}
-		ft_putstr("\n");
+		ft_putstr("usage: ./fdf [valid_map]\n");
+		return (0);
 	}
+	if ((fd = open(file, O_RDONLY)) < 0)
+	{
+		ft_putstr("invalid file\n");
+		return (0);
+	}
+	if ((read(fd, buf, 0)) < 0)
+	{
+		ft_putstr("invalid file\n");
+		return (0);
+	}
+	close(fd);
+	return (1);
 }
 
-int main(int ac, char **av)
+int					h_expose(t_fdf *fdf)
 {
-    void *mlx;
-	void *window;
-    if (!(mlx = mlx_init()))
-        return (0);
-	t_point size = get_map_size(av[1]);
-    if (!(window = mlx_new_window(mlx, 1280, 720, "suce")))
-        return (0);
-	t_map *map = create_map(av[1], get_map_size(av[1]));
-	ft_putstr("\n\n\n");
-	print_map(map);
-	//draw_map(map, mlx, window, 0xFFFFFF);
-	draw_line(create_line(create_point(0, 0), create_point(100, 84)), mlx, window, 0xFFFFFF);
-    mlx_loop(mlx);
+	init_axes(fdf);
+	ft_bzero(fdf->img.image, W * H * 4);
+	mlx_clear_window(fdf->mlx, fdf->win);
+	draw_map(fdf);
+	mlx_put_image_to_window(fdf->mlx, fdf->win, fdf->img.ptr, 0, 0);
+	return (0);
+}
+
+int					main(int ac, char **av)
+{
+	t_fdf			fdf;
+
+	(void)fdf;
+	if (!check_error(ac, av[1]))
+		return (0);
+	if (!(fdf.mlx = mlx_init()))
+		return (0);
+	if (!(fdf.win = mlx_new_window(fdf.mlx, W, H, "izoukhai le bg dla street")))
+		return (0);
+	init_fdf(&fdf, av[1]);
+	render(&fdf);
+	mlx_hook(fdf.win, 2, (1L << 0), handle_key, &fdf);
+	mlx_mouse_hook(fdf.win, handle_mouse, &fdf);
+	mlx_expose_hook(fdf.win, h_expose, &fdf);
+	mlx_loop(fdf.mlx);
 }

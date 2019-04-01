@@ -1,39 +1,20 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   ft_atoi.c                                        .::    .:/ .      .::   */
+/*   image.c                                          .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: izoukhai <marvin@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
-/*   Created: 2018/10/05 16:46:27 by izoukhai     #+#   ##    ##    #+#       */
-/*   Updated: 2018/10/05 16:46:28 by izoukhai    ###    #+. /#+    ###.fr     */
+/*   Created: 2018/12/12 21:26:03 by izoukhai     #+#   ##    ##    #+#       */
+/*   Updated: 2018/12/13 00:13:09 by izoukhai    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
-#include "includes/libft.h"
+#include "fdf.h"
 
-int				ft_atoi(const char *str)
+void				img_put_pixel(t_fdf *fdf, t_point pos, int color)
 {
-	int			sign;
-	long int	res;
-
-	res = 0;
-	sign = 1;
-	while (*str == ' ' || *str == '\t' || *str == '\n' || *str == '\r' ||
-			*str == '\v' || *str == '\f')
-		str++;
-	if (*str == '-')
-	{
-		sign = -sign;
-		str++;
-	}
-	else if (*str == '+')
-		str++;
-	while (*str >= '0' && *str <= '9')
-	{
-		res = res * 10 + *str - '0';
-		str++;
-	}
-	return ((int)res * sign);
+	if ((pos.x > 0 && pos.x < W) && (pos.y > 0 && pos.y < H))
+		fdf->img.image[((int)pos.y * W + (int)pos.x)] = color;
 }

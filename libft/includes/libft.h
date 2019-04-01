@@ -14,7 +14,7 @@
 #ifndef LIBFT_H
 # define LIBFT_H
 # include <stdlib.h>
-# define ABS(N) (N < 0 ? -N : N)
+# define ABS(N) (N < 0 ? -N :N)
 
 typedef struct		s_list
 {

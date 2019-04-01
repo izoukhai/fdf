@@ -1,80 +1,114 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   map.c                                            .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: izoukhai <marvin@le-101.fr>                +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2018/12/08 03:16:46 by izoukhai     #+#   ##    ##    #+#       */
+/*   Updated: 2018/12/08 03:16:47 by izoukhai    ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 #include "fdf.h"
 
-static void print_map(t_map *map)
+t_index				get_map_size(t_fdf *fdf)
 {
-	int i = -1, j = -1;
-	while (++i < map->size.y)
-	{
-		j = -1;
-		while (++j < map->size.x)
-		{
-			ft_putnbr(map->tab[i][j]);
-			if (map->tab[i][j] == 10)
-				ft_putchar(' ');
-			else
-				ft_putstr("  ");
-		}
-		ft_putstr("\n");
-	}
-}
+	t_index			res;
+	t_index			pos;
+	char			*line;
+	char			**tmp;
 
-t_map			*create_map(char *file, t_point size)
-{
-	t_map		*map;
-	int			i;
-	int			j;
-
-	i = -1;
-	map = (t_map*)malloc(sizeof(t_map));
-	map->size = size;
-	map->tab = (int**)malloc(sizeof(int*) * map->size.y);
-	while (++i < map->size.y)
-	{
-		j = -1;
-		map->tab[i] = (int*)malloc(sizeof(int) * map->size.x);
-		while (++j < map->size.x)
-			map->tab[i][j] = 0;
-	}
-	print_map(map);
-	get_map(&map, file);
-	return (map);
-}
-
-t_point			get_map_size(char *file)
-{
-	int			fd;
-	char		*line;
-	t_point		res;
-
-	fd = open(file, O_RDONLY);
 	res.y = 0;
-	res.x = get_real_size(file);
-	while ((get_next_line(fd, &line)))
+	fdf->fd = open(fdf->file, O_RDONLY);
+	while ((get_next_line(fdf->fd, &line)) == 1)
+	{
+		pos.x = -1;
+		tmp = ft_strsplit(line, ' ');
+		if (*tmp == NULL)
+			break ;
+		res.x = 0;
+		while (tmp[++pos.x])
+		{
+			res.x++;
+			free(tmp[pos.x]);
+		}
 		res.y++;
-	close(fd);
+		free(tmp);
+		free(line);
+	}
+	close(fdf->fd);
 	return (res);
 }
 
-void			get_map(t_map **map, char *file)
+void				init_coord(t_fdf *fdf)
 {
-	int			i;
-	int			j;
-	int			fd;
-	char		*line;
-	char		**tmp;
+	t_index			pos;
 
-	fd = open(file, O_RDONLY);
-	j = 0;
-	while ((get_next_line(fd, &line)) == 1)
+	pos.y = -1;
+	fdf->map->coord = (t_point**)malloc(sizeof(t_point*) * fdf->map->size.y);
+	while (++pos.y < fdf->map->size.y)
 	{
-		i = -1;
+		pos.x = -1;
+		fdf->map->coord[pos.y] = (t_point*)malloc(sizeof(t_point) *
+			fdf->map->size.x);
+		while (++pos.x < fdf->map->size.x)
+			fdf->map->coord[pos.y][pos.x].color = RGB(134, 59, 134);
+	}
+}
+
+void				get_z(t_fdf *fdf)
+{
+	t_index			pos;
+	char			*line;
+	char			**tmp;
+
+	pos.y = -1;
+	fdf->fd = open(fdf->file, O_RDONLY);
+	while ((get_next_line(fdf->fd, &line)) == 1 && ++pos.y < fdf->map->size.y)
+	{
+		pos.x = -1;
 		tmp = ft_strsplit(line, ' ');
-		while (tmp[++i])
+		while (tmp[++pos.x])
 		{
-			(*map)->tab[j][i] = ft_atoi(tmp[i]);
+			fdf->map->coord[pos.y][pos.x].z = ft_atoi(tmp[pos.x]);
+			fdf->map->coord[pos.y][pos.x].z > fdf->max_z ? fdf->max_z =
+				fdf->map->coord[pos.y][pos.x].z : 0;
+			if (fdf->map->coord[pos.y][pos.x].z < 0)
+				fdf->map->coord[pos.y][pos.x].z < fdf->min_z ? fdf->min_z =
+					fdf->map->coord[pos.y][pos.x].z : 0;
+			free(tmp[pos.x]);
 		}
 		free(tmp);
-		j++;
+		free(line);
 	}
-	close(fd);
+	close(fdf->fd);
+}
+
+void				get_color(t_fdf *fdf)
+{
+	t_index			pos;
+	int				z;
+
+	pos.y = -1;
+	while (++pos.y < fdf->map->size.y)
+	{
+		pos.x = -1;
+		while (++pos.x < fdf->map->size.x)
+		{
+			z = fdf->map->coord[pos.y][pos.x].z;
+			z == 0 ? z++ : 0;
+			fdf->max_z == 0 ? fdf->max_z++ : 0;
+			fdf->min_z == 0 ? fdf->min_z-- : 0;
+			if (z < 0)
+				fdf->map->coord[pos.y][pos.x].color =
+					RGB(0, 199 - (154 * z / fdf->min_z), 230 -
+					(154 * z / fdf->min_z));
+			else
+				fdf->map->coord[pos.y][pos.x].color =
+					RGB((254 * z / fdf->max_z), 177 - (99 * z / fdf->max_z),
+					(99 * z / fdf->max_z));
+		}
+	}
 }
